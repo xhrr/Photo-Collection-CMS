@@ -1,0 +1,152 @@
+{
+    "photographer": {
+        "name": "名字-修改后点保存修改",
+        "nameEn": "非英文也行-不填也行",
+        "tagline": "新手摄影师 · 摸鱼程序员"
+    },
+    "hero": {
+        "image": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1920&q=85",
+        "scrollHint": "向下探索"
+    },
+    "works": {
+        "heading": "用镜头讲述未被言说的故事",
+        "items": [
+            {
+                "title": "城市肖像",
+                "category": "人像摄影",
+                "image": "https://ts3.tc.mm.bing.net/th/id/OIP-C.dW8GKXQpYzniG6mZgL76_AHaQD?r=0&cb=thfc1falcon2&rs=1&pid=ImgDetMain&o=7&rm=3",
+                "layout": "default",
+                "images": []
+            },
+            {
+                "title": "山河之间",
+                "category": "风光摄影",
+                "image": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1000&q=85",
+                "layout": "featured",
+                "images": [
+                    "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1470071459604-7b8ec44ffd0e?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=85"
+                ]
+            },
+            {
+                "title": "寂静之诗",
+                "category": "自然摄影",
+                "image": "https://images.unsplash.com/photo-1470071459604-7b8ec44ffd0e?w=800&q=85",
+                "layout": "tall",
+                "images": [
+                    "https://images.unsplash.com/photo-1470071459604-7b8ec44ffd0e?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1518173946687-a1e0e2a5e906?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=85"
+                ]
+            },
+            {
+                "title": "都市几何",
+                "category": "建筑摄影",
+                "image": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=85",
+                "layout": "default",
+                "images": [
+                    "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200&q=85"
+                ]
+            },
+            {
+                "title": "晨雾",
+                "category": "风光摄影",
+                "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=85",
+                "layout": "default",
+                "images": [
+                    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&q=85"
+                ]
+            },
+            {
+                "title": "远方的呼唤",
+                "category": "旅行摄影",
+                "image": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=85",
+                "layout": "default",
+                "images": [
+                    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=1200&q=85",
+                    "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200&q=85"
+                ]
+            }
+        ]
+    },
+    "about": {
+        "visible": false,
+        "role": "摄影师 / 视觉艺术家",
+        "bio": [
+            "从事摄影创作十余年，专注于通过镜头捕捉人与环境之间微妙的情感联结。我的作品试图在光影交错之间，找到那些容易被忽视的真实瞬间。",
+            "曾为《Vogue》《国家地理》《时尚芭莎》等刊物拍摄专题，作品在国内外多次展出。我相信最好的照片不是拍出来的，而是与眼前的景物流淌在一起的。"
+        ],
+        "stats": [
+            {
+                "label": "经验",
+                "value": "12 年"
+            },
+            {
+                "label": "项目",
+                "value": "200+"
+            },
+            {
+                "label": "获奖",
+                "value": "15 项"
+            }
+        ]
+    },
+    "aboutImage": "",
+    "social": {
+        "links": [
+            {
+                "name": "Instagram",
+                "url": "#"
+            },
+            {
+                "name": "微博",
+                "url": "#"
+            },
+            {
+                "name": "微信",
+                "url": "#"
+            },
+            {
+                "name": "小红书",
+                "url": "#"
+            },
+            {
+                "name": "cccc",
+                "url": "#"
+            }
+        ]
+    },
+    "footer": {
+        "copyright": "© 2026 ·SgLxQ · 版权所有"
+    },
+    "modules": [
+        {
+            "type": "hero",
+            "visible": true
+        },
+        {
+            "type": "works",
+            "visible": true
+        },
+        {
+            "type": "about",
+            "visible": false
+        },
+        {
+            "type": "footer",
+            "visible": true
+        }
+    ],
+    "theme": {
+        "active": null
+    }
+}

@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+dist/
+uploads/
+site/js/config.js
+.claude/
+*.local.*
+.DS_Store
+Thumbs.db

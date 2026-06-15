@@ -1,0 +1,21 @@
+# Cloudflare Pages 缓存策略
+# 参考: https://developers.cloudflare.com/pages/platform/headers/
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# 静态资源 — 长期缓存
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 图片资源 — 缓存 1 天（外部图片托管在 CDN，此策略覆盖本地占位图）
+/images/*
+  Cache-Control: public, max-age=86400
+
+# HTML — 不缓存（确保内容即时更新）
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

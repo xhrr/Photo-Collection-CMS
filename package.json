@@ -1,0 +1,16 @@
+{
+  "name": "photographer-cms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地摄影师主页 CMS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "archiver": "^7.0.1",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "name": "theme-editorial",
+    "label": "杂志风格",
+    "description": "高端杂志风格，深色背景 + 金色点缀 + 衬线字体 + 大留白",
+    "author": "SgLxQ",
+    "version": "1.1.0",
+    "type": "full",
+    "modules": ["hero", "works", "about", "text", "images", "footer"]
+}

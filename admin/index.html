@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Collection CMS</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <h1 class="sidebar__logo">Photo Collection CMS</h1>
+        </div>
+        <nav class="sidebar__nav" id="sidebarNav">
+            <a class="sidebar__link active" data-section="photographer">摄影师信息</a>
+            <a class="sidebar__link" data-section="hero">首页大图</a>
+            <a class="sidebar__link" data-section="works">精选作品</a>
+            <a class="sidebar__link" data-section="about">关于我</a>
+            <a class="sidebar__link" data-section="social">社交链接</a>
+            <a class="sidebar__link" data-section="footer">版权信息</a>
+            <a class="sidebar__link" data-section="modules">模块管理</a>
+            <div class="sidebar__divider"></div>
+            <a class="sidebar__link" data-section="themes">主题风格</a>
+            <a class="sidebar__link" data-section="media">媒体库</a>
+            <a class="sidebar__link" data-section="export">导出部署</a>
+        </nav>
+        <div class="sidebar__footer">
+            <a href="/" target="_blank" class="sidebar__preview">预览网站</a>
+        </div>
+    </aside>
+
+    <!-- Mobile toggle -->
+    <button class="mobile-toggle" id="mobileToggle" aria-label="菜单">
+        <span></span><span></span><span></span>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main" id="mainContent">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <h2 class="topbar__title" id="topbarTitle">摄影师信息</h2>
+            <div class="topbar__actions">
+                <span class="topbar__status" id="saveStatus"></span>
+                <button class="btn btn--primary" id="btnSave">保存修改</button>
+            </div>
+        </div>
+
+        <!-- Sections -->
+        <div id="section-photographer" class="section-card active"></div>
+        <div id="section-hero" class="section-card"></div>
+        <div id="section-works" class="section-card"></div>
+        <div id="section-about" class="section-card"></div>
+        <div id="section-social" class="section-card"></div>
+        <div id="section-footer" class="section-card"></div>
+        <div id="section-modules" class="section-card"></div>
+        <div id="section-themes" class="section-card"></div>
+        <div id="section-media" class="section-card"></div>
+        <div id="section-export" class="section-card"></div>
+    </main>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="/admin/js/admin.js"></script>
+</body>
+</html>
