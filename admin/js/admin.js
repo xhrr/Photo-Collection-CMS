@@ -534,17 +534,120 @@
 
     // ---------- 模块管理 ----------
 
+    let expandedModuleIndex = null;
+
     const MODULE_TYPES = [
-        { type: 'hero', label: '首页大图', icon: '◉' },
-        { type: 'works', label: '精选作品', icon: '▣' },
-        { type: 'about', label: '关于我', icon: '◎' },
-        { type: 'text', label: '文本内容', icon: '¶' },
-        { type: 'images', label: '图片展示', icon: '⊞' },
-        { type: 'footer', label: '页脚', icon: '⌂' }
+        { type: 'hero', label: '首页大图', icon: '◉', summary: '封面大图与主标题' },
+        { type: 'works', label: '精选作品', icon: '▣', summary: '作品网格与图集入口' },
+        { type: 'about', label: '关于我', icon: '◎', summary: '个人简介与数据亮点' },
+        { type: 'text', label: '文本内容', icon: '¶', summary: '可编辑标题与 HTML 内容' },
+        { type: 'images', label: '图片展示', icon: '⊞', summary: '可上传多图并选择布局' },
+        { type: 'footer', label: '页脚', icon: '⌂', summary: '版权与社交链接' }
     ];
 
     const MODULE_TYPE_MAP = {};
     MODULE_TYPES.forEach(t => { MODULE_TYPE_MAP[t.type] = t; });
+
+    const MODULE_PRESETS = [
+        {
+            key: 'text-intro',
+            type: 'text',
+            title: '引言文字',
+            meta: '适合首页开场',
+            desc: '带小标题和一段可直接改写的介绍文案。',
+            preview: 'label+paragraph',
+            create: () => ({
+                type: 'text',
+                visible: true,
+                label: '引言',
+                nav: true,
+                content: '<p>在这里写下这组作品想表达的第一句话。可以是一段创作说明，也可以是一句更安静的自我介绍。</p>'
+            })
+        },
+        {
+            key: 'text-quote',
+            type: 'text',
+            title: '引用段落',
+            meta: '适合情绪锚点',
+            desc: '自带大号引用样式，用来放一句摄影宣言或章节题记。',
+            preview: 'quote',
+            create: () => ({
+                type: 'text',
+                visible: true,
+                label: '题记',
+                nav: true,
+                content: '<blockquote>我想让照片保留那些即将消失的光。</blockquote><p>把这句话替换成你的创作理念，或者删除下面这段说明。</p>'
+            })
+        },
+        {
+            key: 'images-grid',
+            type: 'images',
+            title: '图片网格',
+            meta: '适合系列展示',
+            desc: '创建后直接出现图片管理 UI，可上传或粘贴多张图片。',
+            preview: 'grid',
+            create: () => ({
+                type: 'images',
+                visible: true,
+                label: '作品欣赏',
+                nav: true,
+                layout: 'grid',
+                images: []
+            })
+        },
+        {
+            key: 'images-wide',
+            type: 'images',
+            title: '宽幅图片',
+            meta: '适合横图叙事',
+            desc: '默认使用宽屏双列布局，更适合风景、街景和项目切片。',
+            preview: 'wide',
+            create: () => ({
+                type: 'images',
+                visible: true,
+                label: '现场片段',
+                nav: true,
+                layout: 'wide',
+                images: []
+            })
+        },
+        {
+            key: 'hero',
+            type: 'hero',
+            title: '首页大图',
+            meta: '唯一模块',
+            desc: '恢复或显示首页封面模块，图片和文字在“首页大图”页签维护。',
+            preview: 'hero',
+            singleton: true
+        },
+        {
+            key: 'works',
+            type: 'works',
+            title: '精选作品',
+            meta: '唯一模块',
+            desc: '恢复或显示作品网格模块，作品内容在“精选作品”页签维护。',
+            preview: 'works',
+            singleton: true
+        },
+        {
+            key: 'about',
+            type: 'about',
+            title: '关于我',
+            meta: '唯一模块',
+            desc: '恢复或显示个人简介模块，内容在“关于我”页签维护。',
+            preview: 'profile',
+            singleton: true
+        },
+        {
+            key: 'footer',
+            type: 'footer',
+            title: '页脚',
+            meta: '唯一模块',
+            desc: '恢复或显示页脚模块，包含版权和社交链接。',
+            preview: 'footer',
+            singleton: true
+        }
+    ];
 
     function renderModules() {
         ensureModules();
@@ -554,13 +657,16 @@
                 <h3 class="section-header__title">模块管理</h3>
                 <p class="section-header__desc">管理首页所有板块的顺序、显隐和内容</p>
             </div>
-            <div class="modules-toolbar">
-                <label class="modules-toolbar__label">添加新模块</label>
-                <div class="modules-toolbar__actions">
-                    <select id="modulesAddType" class="modules-toolbar__select">
-                        ${MODULE_TYPES.map(t => `<option value="${t.type}">${t.icon} ${t.label}</option>`).join('')}
-                    </select>
-                    <button class="btn btn--primary btn--sm" id="btnAddModule">+ 添加</button>
+            <div class="module-starter">
+                <div class="module-starter__head">
+                    <div>
+                        <p class="module-starter__eyebrow">添加模块</p>
+                        <h4 class="module-starter__title">选择一个带编辑界面的模块模板</h4>
+                    </div>
+                    <span class="module-starter__hint">点击卡片后会自动插入并展开</span>
+                </div>
+                <div class="module-preset-grid">
+                    ${MODULE_PRESETS.map(renderModulePreset).join('')}
                 </div>
             </div>
             <div class="modules-list" id="modulesList">
@@ -568,6 +674,37 @@
             </div>
         `;
         bindModuleEvents();
+    }
+
+    function renderModulePreset(preset) {
+        const typeDef = MODULE_TYPE_MAP[preset.type] || { icon: '+', label: preset.type };
+        const disabled = preset.singleton && config.modules.some(mod => mod.type === preset.type);
+        const actionText = disabled ? '已存在，点击定位' : '添加';
+        return `
+            <button class="module-preset ${disabled ? 'module-preset--exists' : ''}" data-add-module="${preset.key}" type="button">
+                <span class="module-preset__top">
+                    <span class="module-preset__icon">${typeDef.icon}</span>
+                    <span class="module-preset__meta">${esc(preset.meta)}</span>
+                </span>
+                <span class="module-preset__preview module-preset__preview--${esc(preset.preview)}" aria-hidden="true">
+                    ${modulePresetPreview(preset.preview)}
+                </span>
+                <span class="module-preset__title">${esc(preset.title)}</span>
+                <span class="module-preset__desc">${esc(preset.desc)}</span>
+                <span class="module-preset__action">${actionText}</span>
+            </button>
+        `;
+    }
+
+    function modulePresetPreview(kind) {
+        if (kind === 'quote') return '<i></i><b></b><b></b>';
+        if (kind === 'grid') return '<i></i><i></i><i></i><i></i>';
+        if (kind === 'wide') return '<i></i><i></i>';
+        if (kind === 'hero') return '<i></i><b></b><b></b>';
+        if (kind === 'works') return '<i></i><i></i><i></i>';
+        if (kind === 'profile') return '<i></i><b></b><b></b><b></b>';
+        if (kind === 'footer') return '<b></b><i></i><i></i><i></i>';
+        return '<b></b><i></i><i></i>';
     }
 
     function ensureModules() {
@@ -586,14 +723,16 @@
         const total = config.modules.length;
         const visible = mod.visible !== false;
         const extra = moduleExtraFields(mod, index);
+        const expandedClass = index === expandedModuleIndex ? ' module-item--expanded' : '';
 
         return `
-            <div class="module-item" data-module-index="${index}">
+            <div class="module-item${expandedClass}" data-module-index="${index}">
                 <div class="module-item__header" onclick="this.parentElement.classList.toggle('module-item--expanded')">
                     <span class="module-item__drag" title="拖拽排序">⠿</span>
                     <span class="module-item__icon">${typeDef.icon}</span>
                     <span class="module-item__type">${esc(typeDef.label)}</span>
                     <span class="module-item__label">${esc(mod.label || mod.type)}</span>
+                    <span class="module-item__summary">${esc(typeDef.summary || '')}</span>
                     <label class="module-item__toggle" title="显示/隐藏" onclick="event.stopPropagation()">
                         <input type="checkbox" class="module-toggle-input" data-toggle="${index}" ${visible ? 'checked' : ''}>
                         <span class="module-toggle-switch"></span>
@@ -627,9 +766,19 @@
                 </select></div>`;
                 const imgList = mod.images || [];
                 html += `<div class="list-divider"><span class="list-divider__label">图片列表 (${imgList.length})</span></div>`;
+                html += `<div class="module-image-composer">
+                    <input type="file" accept="image/*" multiple class="file-input" data-module-file="${index}">
+                    <button class="btn btn--ghost btn--sm" data-module-upload="${index}" type="button">上传图片</button>
+                    <textarea data-module-bulk="${index}" rows="3" placeholder="也可以粘贴图片链接，一行一个"></textarea>
+                    <button class="btn btn--primary btn--sm" data-module-bulk-add="${index}" type="button">添加链接</button>
+                </div>`;
+                if (imgList.length === 0) {
+                    html += '<p class="module-empty">还没有图片。上传本地图片，或把图片链接粘贴到上方输入框。</p>';
+                }
                 html += `<div class="module-images-list" data-module-images="${index}">
                     ${imgList.map((url, i) => `
                         <div class="module-image-item" data-img-index="${i}">
+                            <span class="module-image-item__thumb">${url ? `<img src="${esc(url)}" onerror="this.style.display='none'">` : ''}</span>
                             <input type="text" data-img-url="${index}-${i}" value="${esc(url)}" placeholder="图片 URL">
                             <button class="btn--icon btn--icon--danger" data-remove-img="${index}-${i}" title="删除">×</button>
                         </div>
@@ -643,14 +792,8 @@
     }
 
     function bindModuleEvents() {
-        $('#btnAddModule').addEventListener('click', () => {
-            const type = $('#modulesAddType').value;
-            const mod = { type, visible: true };
-            if (type === 'text') { mod.content = ''; mod.label = '新文本'; }
-            if (type === 'images') { mod.images = []; mod.label = '新图片'; }
-            config.modules.push(mod);
-            renderModules();
-            autoSave();
+        $$('[data-add-module]').forEach(btn => {
+            btn.addEventListener('click', () => addModuleFromPreset(btn.dataset.addModule));
         });
 
         $$('.module-toggle-input').forEach(cb => {
@@ -689,6 +832,31 @@
         bindModuleFieldEvents();
     }
 
+    function addModuleFromPreset(key) {
+        const preset = MODULE_PRESETS.find(item => item.key === key);
+        if (!preset) return;
+
+        if (preset.singleton) {
+            const existingIndex = config.modules.findIndex(mod => mod.type === preset.type);
+            if (existingIndex >= 0) {
+                config.modules[existingIndex].visible = true;
+                expandedModuleIndex = existingIndex;
+                renderModules();
+                showToast('已定位到现有模块', 'success');
+                autoSave();
+                return;
+            }
+            config.modules.push({ type: preset.type, visible: true });
+        } else if (typeof preset.create === 'function') {
+            config.modules.push(preset.create());
+        }
+
+        expandedModuleIndex = config.modules.length - 1;
+        renderModules();
+        showToast('模块已添加，可直接编辑', 'success');
+        autoSave();
+    }
+
     function bindModuleFieldEvents() {
         $$('[data-module-label]').forEach(input => {
             input.addEventListener('change', () => {
@@ -720,8 +888,51 @@
                 const modIdx = parseInt(parts[0]), imgIdx = parseInt(parts[1]);
                 if (config.modules[modIdx] && config.modules[modIdx].images) {
                     config.modules[modIdx].images[imgIdx] = input.value;
+                    const thumb = input.closest('.module-image-item').querySelector('.module-image-item__thumb');
+                    if (thumb) thumb.innerHTML = input.value ? `<img src="${esc(input.value)}" onerror="this.style.display='none'">` : '';
                     autoSave();
                 }
+            });
+        });
+        $$('[data-module-upload]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const fileInput = document.querySelector(`[data-module-file="${btn.dataset.moduleUpload}"]`);
+                if (fileInput) fileInput.click();
+            });
+        });
+        $$('[data-module-file]').forEach(input => {
+            input.addEventListener('change', async () => {
+                const idx = parseInt(input.dataset.moduleFile);
+                const files = Array.from(input.files || []);
+                if (files.length === 0) return;
+                if (!config.modules[idx].images) config.modules[idx].images = [];
+                const urls = [];
+                for (const file of files) {
+                    const url = await uploadImage(file);
+                    if (url) urls.push(url);
+                }
+                if (urls.length > 0) {
+                    config.modules[idx].images.push(...urls);
+                    expandedModuleIndex = idx;
+                    renderModules();
+                    showToast(`已添加 ${urls.length} 张图片`, 'success');
+                    autoSave();
+                }
+                input.value = '';
+            });
+        });
+        $$('[data-module-bulk-add]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.moduleBulkAdd);
+                const textarea = document.querySelector(`[data-module-bulk="${idx}"]`);
+                const urls = textarea ? textarea.value.split('\n').map(u => u.trim()).filter(Boolean) : [];
+                if (urls.length === 0) return;
+                if (!config.modules[idx].images) config.modules[idx].images = [];
+                config.modules[idx].images.push(...urls);
+                expandedModuleIndex = idx;
+                renderModules();
+                showToast(`已添加 ${urls.length} 个链接`, 'success');
+                autoSave();
             });
         });
         $$('[data-add-img]').forEach(btn => {
@@ -729,6 +940,7 @@
                 const idx = parseInt(btn.dataset.addImg);
                 if (!config.modules[idx].images) config.modules[idx].images = [];
                 config.modules[idx].images.push('');
+                expandedModuleIndex = idx;
                 renderModules();
                 autoSave();
             });
@@ -739,6 +951,7 @@
                 const modIdx = parseInt(parts[0]), imgIdx = parseInt(parts[1]);
                 if (config.modules[modIdx] && config.modules[modIdx].images) {
                     config.modules[modIdx].images.splice(imgIdx, 1);
+                    expandedModuleIndex = modIdx;
                     renderModules();
                     autoSave();
                 }
@@ -1280,6 +1493,40 @@
 
         // 版权信息
         config.footer.copyright = val('#footer-copy');
+
+        collectModuleFields();
+    }
+
+    function collectModuleFields() {
+        if (!config.modules || !Array.isArray(config.modules)) return;
+        $$('.module-item').forEach(el => {
+            const idx = parseInt(el.dataset.moduleIndex);
+            const mod = config.modules[idx];
+            if (!mod) return;
+
+            const toggle = el.querySelector('.module-toggle-input');
+            if (toggle) mod.visible = toggle.checked;
+
+            const labelInput = el.querySelector(`[data-module-label="${idx}"]`);
+            if (labelInput) mod.label = labelInput.value;
+
+            const navInput = el.querySelector(`[data-module-nav="${idx}"]`);
+            if (navInput) mod.nav = navInput.checked;
+
+            const contentInput = el.querySelector(`[data-module-content="${idx}"]`);
+            if (contentInput) mod.content = contentInput.value;
+
+            const layoutInput = el.querySelector(`[data-module-layout="${idx}"]`);
+            if (layoutInput) mod.layout = layoutInput.value;
+
+            const imageInputs = el.querySelectorAll('[data-img-url]');
+            if (imageInputs.length > 0) {
+                mod.images = [];
+                imageInputs.forEach(input => {
+                    if (input.value.trim()) mod.images.push(input.value.trim());
+                });
+            }
+        });
     }
 
     /* ===================================================================

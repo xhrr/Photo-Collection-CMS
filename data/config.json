@@ -139,11 +139,19 @@
         },
         {
             "type": "about",
-            "visible": false
+            "visible": true
         },
         {
             "type": "footer",
             "visible": true
+        },
+        {
+            "type": "images",
+            "visible": true,
+            "label": "现场片段",
+            "nav": true,
+            "layout": "wide",
+            "images": []
         }
     ],
     "theme": {
