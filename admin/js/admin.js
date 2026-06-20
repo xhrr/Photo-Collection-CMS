@@ -672,6 +672,7 @@
             <div class="modules-list" id="modulesList">
                 ${config.modules.map((mod, i) => renderModuleItem(mod, i)).join('')}
             </div>
+            <p class="module-sort-hint" id="moduleSortHint" aria-live="polite">拖动每个模块左侧手柄即可调整首页顺序。</p>
         `;
         bindModuleEvents();
     }
@@ -726,9 +727,9 @@
         const expandedClass = index === expandedModuleIndex ? ' module-item--expanded' : '';
 
         return `
-            <div class="module-item${expandedClass}" data-module-index="${index}">
+            <div class="module-item${expandedClass}" data-module-index="${index}" draggable="true">
                 <div class="module-item__header" onclick="this.parentElement.classList.toggle('module-item--expanded')">
-                    <span class="module-item__drag" title="拖拽排序">⠿</span>
+                    <button class="module-item__drag" type="button" title="拖拽排序" aria-label="拖拽排序" onclick="event.stopPropagation()">⠿</button>
                     <span class="module-item__icon">${typeDef.icon}</span>
                     <span class="module-item__type">${esc(typeDef.label)}</span>
                     <span class="module-item__label">${esc(mod.label || mod.type)}</span>
@@ -792,6 +793,8 @@
     }
 
     function bindModuleEvents() {
+        bindModuleDragSort();
+
         $$('[data-add-module]').forEach(btn => {
             btn.addEventListener('click', () => addModuleFromPreset(btn.dataset.addModule));
         });
@@ -807,14 +810,14 @@
         $$('[data-move-up]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.moveUp);
-                if (idx > 0) { swapModules(idx, idx - 1); renderModules(); autoSave(); }
+                if (idx > 0) moveModule(idx, idx - 1, false);
             });
         });
 
         $$('[data-move-down]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.moveDown);
-                if (idx < config.modules.length - 1) { swapModules(idx, idx + 1); renderModules(); autoSave(); }
+                if (idx < config.modules.length - 1) moveModule(idx, idx + 1, false);
             });
         });
 
@@ -830,6 +833,90 @@
         });
 
         bindModuleFieldEvents();
+    }
+
+    function bindModuleDragSort() {
+        const list = $('#modulesList');
+        if (!list) return;
+
+        let draggedIndex = null;
+        let dragFromHandle = false;
+
+        $$('.module-item__drag').forEach(handle => {
+            handle.addEventListener('pointerdown', () => { dragFromHandle = true; });
+            handle.addEventListener('pointerup', () => { setTimeout(() => { dragFromHandle = false; }, 0); });
+            handle.addEventListener('pointercancel', () => { dragFromHandle = false; });
+            handle.addEventListener('keydown', e => {
+                const item = handle.closest('.module-item');
+                const idx = parseInt(item.dataset.moduleIndex);
+                if (e.key === 'ArrowUp' && idx > 0) {
+                    e.preventDefault();
+                    moveModule(idx, idx - 1, true);
+                }
+                if (e.key === 'ArrowDown' && idx < config.modules.length - 1) {
+                    e.preventDefault();
+                    moveModule(idx, idx + 1, true);
+                }
+            });
+        });
+
+        $$('.module-item').forEach(item => {
+            item.addEventListener('dragstart', e => {
+                if (!dragFromHandle) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedIndex = parseInt(item.dataset.moduleIndex);
+                expandedModuleIndex = item.classList.contains('module-item--expanded') ? draggedIndex : null;
+                item.classList.add('module-item--dragging');
+                list.classList.add('modules-list--sorting');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', String(draggedIndex));
+            });
+
+            item.addEventListener('dragend', () => {
+                dragFromHandle = false;
+                draggedIndex = null;
+                list.classList.remove('modules-list--sorting');
+                $$('.module-item').forEach(el => el.classList.remove('module-item--dragging', 'module-item--drop-before', 'module-item--drop-after'));
+            });
+
+            item.addEventListener('dragover', e => {
+                if (draggedIndex === null) return;
+                e.preventDefault();
+                const rect = item.getBoundingClientRect();
+                const before = e.clientY < rect.top + rect.height / 2;
+                $$('.module-item').forEach(el => el.classList.remove('module-item--drop-before', 'module-item--drop-after'));
+                item.classList.add(before ? 'module-item--drop-before' : 'module-item--drop-after');
+                e.dataTransfer.dropEffect = 'move';
+            });
+
+            item.addEventListener('drop', e => {
+                e.preventDefault();
+                if (draggedIndex === null) return;
+                const targetIndex = parseInt(item.dataset.moduleIndex);
+                const rect = item.getBoundingClientRect();
+                const insertBefore = e.clientY < rect.top + rect.height / 2;
+                let toIndex = insertBefore ? targetIndex : targetIndex + 1;
+                if (draggedIndex < toIndex) toIndex -= 1;
+                moveModule(draggedIndex, toIndex, true);
+            });
+        });
+    }
+
+    function moveModule(fromIndex, toIndex, announce) {
+        if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= config.modules.length || toIndex >= config.modules.length) return;
+        const wasExpanded = expandedModuleIndex === fromIndex;
+        const moved = config.modules.splice(fromIndex, 1)[0];
+        config.modules.splice(toIndex, 0, moved);
+        expandedModuleIndex = wasExpanded ? toIndex : null;
+        renderModules();
+        if (announce) {
+            showToast('模块顺序已更新', 'success');
+            const hint = $('#moduleSortHint');
+            if (hint) hint.textContent = `已将模块移动到第 ${toIndex + 1} 位。`;
+        }
+        autoSave();
     }
 
     function addModuleFromPreset(key) {
@@ -1161,16 +1248,41 @@
     // ---------- 导出部署 ----------
 
     function renderExport() {
+        const summary = getExportSummary();
         $('#section-export').innerHTML = `
             <div class="section-header">
                 <h3 class="section-header__title">导出部署</h3>
-                <p class="section-header__desc">生成静态网站文件</p>
+                <p class="section-header__desc">生成可部署的纯静态网站文件</p>
             </div>
+            <div class="export-summary" aria-label="导出摘要">
+                <div class="export-summary__item">
+                    <span class="export-summary__value">${summary.modules}</span>
+                    <span class="export-summary__label">可见模块</span>
+                </div>
+                <div class="export-summary__item">
+                    <span class="export-summary__value">${summary.works}</span>
+                    <span class="export-summary__label">作品</span>
+                </div>
+                <div class="export-summary__item">
+                    <span class="export-summary__value">${summary.images}</span>
+                    <span class="export-summary__label">图片引用</span>
+                </div>
+                <div class="export-summary__item export-summary__item--wide">
+                    <span class="export-summary__value">${esc(summary.theme)}</span>
+                    <span class="export-summary__label">当前主题</span>
+                </div>
+            </div>
+            <ol class="export-steps" id="exportSteps" aria-label="导出步骤">
+                <li class="export-step" data-step="save"><span></span>保存当前配置</li>
+                <li class="export-step" data-step="build"><span></span>生成静态文件</li>
+                <li class="export-step" data-step="download"><span></span>准备 ZIP 下载</li>
+            </ol>
             <div class="export-actions">
                 <button class="btn btn--primary" id="btnExport">导出到 dist/</button>
                 <button class="btn btn--accent" id="btnDownload">下载 ZIP</button>
             </div>
-            <div class="export-log" id="exportLog">等待导出...</div>
+            <div class="export-log" id="exportLog" aria-live="polite">等待导出...</div>
+            <div class="export-result" id="exportResult" hidden></div>
 
             <div class="list-divider" style="margin-top:2rem">
                 <span class="list-divider__label">配置管理</span>
@@ -1187,10 +1299,75 @@
         `;
 
         $('#btnExport').addEventListener('click', exportSite);
-        $('#btnDownload').addEventListener('click', () => { window.location.href = '/api/export/download'; });
+        $('#btnDownload').addEventListener('click', downloadExportZip);
         $('#btnExportConfig').addEventListener('click', exportConfigFile);
         $('#btnImportConfig').addEventListener('click', () => $('#configFileInput').click());
         $('#configFileInput').addEventListener('change', importConfigFile);
+    }
+
+    function getExportSummary() {
+        const works = (config.works && config.works.items) || [];
+        const moduleImages = (config.modules || []).reduce((count, mod) => count + ((mod.images && mod.images.length) || 0), 0);
+        const workImages = works.reduce((count, work) => count + (work.image ? 1 : 0) + ((work.images && work.images.length) || 0), 0);
+        const visibleModules = (config.modules || []).filter(mod => mod.visible !== false).length;
+        return {
+            modules: visibleModules,
+            works: works.length,
+            images: workImages + moduleImages + (config.hero && config.hero.image ? 1 : 0) + (config.aboutImage ? 1 : 0),
+            theme: (config.theme && config.theme.active) || '默认主题'
+        };
+    }
+
+    function setExportStep(step, state) {
+        const el = document.querySelector(`[data-step="${step}"]`);
+        if (!el) return;
+        el.classList.remove('export-step--active', 'export-step--done', 'export-step--error');
+        if (state) el.classList.add(`export-step--${state}`);
+    }
+
+    function appendExportLog(message, className) {
+        const log = $('#exportLog');
+        const line = document.createElement('div');
+        if (className) line.className = className;
+        line.textContent = message;
+        if (log.textContent === '等待导出...') log.textContent = '';
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function showExportResult(data) {
+        const result = $('#exportResult');
+        result.hidden = false;
+        result.innerHTML = `
+            <div class="export-result__title">导出完成</div>
+            <div class="export-result__path">${esc(data.path || 'dist/')}</div>
+            <div class="export-result__actions">
+                <button class="btn btn--accent btn--sm" id="btnDownloadReady" type="button">下载 ZIP</button>
+                <button class="btn btn--ghost btn--sm" id="btnCopyDeployNote" type="button">复制部署说明</button>
+            </div>
+        `;
+        $('#btnDownloadReady').addEventListener('click', downloadExportZip);
+        $('#btnCopyDeployNote').addEventListener('click', copyDeployNote);
+    }
+
+    function downloadExportZip() {
+        setExportStep('download', 'active');
+        appendExportLog('正在准备 ZIP 下载...');
+        window.location.href = '/api/export/download';
+        setTimeout(() => {
+            setExportStep('download', 'done');
+            appendExportLog('ZIP 下载已开始。', 'log-success');
+        }, 500);
+    }
+
+    async function copyDeployNote() {
+        const note = '将 dist/ 目录部署到 Cloudflare Pages 或任意静态托管服务。入口文件为 index.html，图片资源位于 uploads/。';
+        try {
+            await navigator.clipboard.writeText(note);
+            showToast('部署说明已复制', 'success');
+        } catch (err) {
+            showToast('复制失败，可手动查看导出日志', 'error');
+        }
     }
 
     function exportConfigFile() {
@@ -1240,32 +1417,52 @@
     async function exportSite() {
         const btn = $('#btnExport');
         const log = $('#exportLog');
+        const result = $('#exportResult');
+        let activeExportStep = 'save';
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> 导出中...';
-        log.innerHTML = '正在保存配置...\n';
+        log.textContent = '';
+        if (result) result.hidden = true;
+        ['save', 'build', 'download'].forEach(step => setExportStep(step, null));
 
         try {
             collectAll();
-            await fetch('/api/config', {
+            setExportStep('save', 'active');
+            activeExportStep = 'save';
+            appendExportLog('正在保存当前配置...');
+            const saveRes = await fetch('/api/config', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
             });
-            log.innerHTML += '<span class="log-success">配置已保存</span>\n正在导出静态文件...\n';
+            if (!saveRes.ok) {
+                const saveData = await saveRes.json();
+                throw new Error(saveData.error || '配置保存失败');
+            }
+            setExportStep('save', 'done');
+            appendExportLog('配置已保存。', 'log-success');
 
+            setExportStep('build', 'active');
+            activeExportStep = 'build';
+            appendExportLog('正在生成静态文件...');
             const res = await fetch('/api/export', { method: 'POST' });
             const data = await res.json();
 
             if (data.success) {
-                log.innerHTML += '<span class="log-success">导出成功！</span>\n';
-                log.innerHTML += `输出目录: ${data.path}\n可直接部署到 Cloudflare Pages\n`;
+                setExportStep('build', 'done');
+                appendExportLog('静态文件已生成。', 'log-success');
+                appendExportLog(`输出目录: ${data.path || 'dist/'}`);
+                appendExportLog('可以下载 ZIP，或直接部署 dist/ 目录。');
+                showExportResult(data);
                 showToast('导出成功', 'success');
             } else {
-                log.innerHTML += `<span class="log-error">导出失败: ${data.error}</span>\n`;
+                setExportStep('build', 'error');
+                appendExportLog(`导出失败: ${data.error || '未知错误'}`, 'log-error');
                 showToast('导出失败', 'error');
             }
         } catch (err) {
-            log.innerHTML += `<span class="log-error">错误: ${err.message}</span>\n`;
+            setExportStep(activeExportStep, 'error');
+            appendExportLog(`错误: ${err.message}`, 'log-error');
             showToast('导出失败', 'error');
         } finally {
             btn.disabled = false;

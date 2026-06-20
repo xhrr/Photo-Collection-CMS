@@ -35,10 +35,11 @@
 
     R.hero = function (mod, idx) {
         const heroImg = C.hero && C.hero.image;
+        const heroUrl = safeUrl(heroImg, 'image');
         return `
 <section class="hero" id="hero" data-module="hero">
     <div class="hero__bg">
-        <img src="${esc(heroImg)}" alt="">
+        <img src="${heroUrl}" alt="">
     </div>
     <div class="hero__overlay"></div>
     <div class="hero__content">
@@ -63,11 +64,13 @@
     </div>
     <div class="works-grid" id="worksGrid" data-module-works>
         ${items.map(function (item, i) {
-            var layoutClass = 'work-card--' + (item.layout || 'default');
+            var layout = normalizeChoice(item.layout, ['default', 'featured', 'tall'], 'default');
+            var layoutClass = 'work-card--' + layout;
             var count = (item.images && item.images.length) || 0;
             var countText = count > 0 ? ' · ' + count + ' 张' : '';
+            var imageUrl = safeUrl(item.image, 'image');
             return '<a href="/gallery.html?work=' + i + '" class="work-card ' + layoutClass + '" data-delay="' + (i * 0.1).toFixed(1) + '">'
-                + '<img class="work-card__image" src="' + esc(item.image) + '" alt="" loading="lazy"'
+                + '<img class="work-card__image" src="' + imageUrl + '" alt="' + esc(item.title || '作品封面') + '" loading="lazy"'
                     + ' onerror="this.style.display=\'none\';this.parentNode.classList.add(\'img-placeholder\');this.parentNode.setAttribute(\'data-placeholder\',\'[ 图片占位 ]\')">'
                 + '<div class="work-card__overlay">'
                     + '<span class="work-card__title">' + esc(item.title) + '</span>'
@@ -88,6 +91,7 @@
         var bio = C.about && C.about.bio || [];
         var stats = C.about && C.about.stats || [];
         var aboutImg = C.aboutImage || '';
+        var aboutUrl = safeUrl(aboutImg, 'image');
 
         return `
 <section class="section" id="about" data-module="about">
@@ -97,7 +101,7 @@
     </div>
     <div class="about-grid">
         <div class="about-image" id="aboutImage">
-            <img src="${esc(aboutImg)}" alt="摄影师肖像">
+            <img src="${aboutUrl}" alt="${esc(C.photographer.name || '摄影师')}肖像">
         </div>
         <div class="about-content" id="aboutContent">
             <h3 class="about-content__name">${esc(C.photographer.name)}</h3>
@@ -117,7 +121,7 @@
     R.text = function (mod, idx) {
         if (!mod || mod.visible === false) return '';
         if (mod.content === undefined && mod.text === undefined) return '';
-        var content = mod.content || mod.text || '';
+        var content = sanitizeHtml(mod.content || mod.text || '');
         var label = mod.label || '';
         return `
 <section class="section section--text" id="module-text-${idx}" data-module="text">
@@ -133,7 +137,7 @@
         var list = mod.images || [];
         if (list.length === 0) return '';
         var label = mod.label || '';
-        var layout = mod.layout || 'grid';
+        var layout = normalizeChoice(mod.layout, ['grid', 'wide', 'single'], 'grid');
 
         return `
 <section class="section section--images" id="module-images-${idx}" data-module="images">
@@ -142,8 +146,9 @@
     </div>
     <div class="images-module__grid images-module__grid--${esc(layout)}" data-module-images>
         ${list.map(function (url) {
+            var imageUrl = safeUrl(url, 'image');
             return '<div class="images-module__item">'
-                + '<img src="' + esc(url) + '" alt="" loading="lazy"'
+                + '<img src="' + imageUrl + '" alt="' + esc(label || '图片') + '" loading="lazy"'
                     + ' onerror="this.style.display=\'none\'">'
             + '</div>';
         }).join('')}
@@ -159,7 +164,8 @@
     <div class="footer__inner">
         <p class="footer__brand">${esc(C.photographer.nameEn)}</p>
         <div class="footer__social">${links.map(function (link) {
-            return '<a href="' + esc(link.url) + '" target="_blank" rel="noopener">' + esc(link.name) + '</a>';
+            var href = safeUrl(link.url, 'link') || '#';
+            return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + esc(link.name) + '</a>';
         }).join('')}</div>
         <p class="footer__copy">${esc(copyright)}</p>
     </div>
@@ -246,6 +252,7 @@
     function bindInteractions() {
         // Navigation scroll effect
         var nav = document.getElementById('nav');
+        if (!nav) return;
 
         function handleNavScroll() {
             var scrolled = window.scrollY > 80;
@@ -258,16 +265,20 @@
         // Mobile nav toggle
         var navToggle = document.getElementById('navToggle');
         var navLinks = document.getElementById('navLinks');
+        if (!navToggle || !navLinks) return;
 
         function closeMobileNav() {
             navToggle.classList.remove('nav__toggle--active');
             navLinks.classList.remove('nav__links--open');
+            navToggle.setAttribute('aria-expanded', 'false');
         }
 
         navToggle.addEventListener('click', function (e) {
             e.stopPropagation();
-            navToggle.classList.toggle('nav__toggle--active');
-            navLinks.classList.toggle('nav__links--open');
+            var open = !navLinks.classList.contains('nav__links--open');
+            navToggle.classList.toggle('nav__toggle--active', open);
+            navLinks.classList.toggle('nav__links--open', open);
+            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
 
         navLinks.querySelectorAll('.nav__link').forEach(function (link) {
@@ -342,6 +353,87 @@
         if (typeof str !== 'string') return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                   .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function safeUrl(value, kind) {
+        return esc(cleanUrl(value, kind));
+    }
+
+    function cleanUrl(value, kind) {
+        if (typeof value !== 'string') return '';
+        var raw = value.trim();
+        if (!raw) return '';
+        if (raw[0] === '#') return raw;
+        if (raw[0] === '/' && raw[1] !== '/') return raw;
+
+        try {
+            var url = new URL(raw, window.location.origin);
+            var allowed = kind === 'image'
+                ? ['http:', 'https:', 'data:']
+                : ['http:', 'https:', 'mailto:', 'tel:'];
+            if (allowed.indexOf(url.protocol) === -1) return '';
+            if (url.protocol === 'data:' && !/^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(raw)) return '';
+            return raw;
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function normalizeChoice(value, allowed, fallback) {
+        return allowed.indexOf(value) >= 0 ? value : fallback;
+    }
+
+    function sanitizeHtml(html) {
+        if (typeof html !== 'string' || !html.trim()) return '';
+
+        var template = document.createElement('template');
+        template.innerHTML = html;
+        var allowedTags = {
+            A: ['href', 'title', 'target', 'rel'],
+            B: [], STRONG: [], I: [], EM: [], U: [], BR: [],
+            P: [], H1: [], H2: [], H3: [], H4: [],
+            UL: [], OL: [], LI: [], BLOCKQUOTE: [],
+            FIGURE: [], FIGCAPTION: [],
+            IMG: ['src', 'alt', 'title', 'loading'],
+            SPAN: [], SMALL: [], CODE: [], PRE: []
+        };
+
+        Array.from(template.content.querySelectorAll('*')).forEach(function (node) {
+            if (!allowedTags[node.tagName]) {
+                node.replaceWith.apply(node, Array.from(node.childNodes));
+                return;
+            }
+
+            Array.from(node.attributes).forEach(function (attr) {
+                var name = attr.name.toLowerCase();
+                if (name.indexOf('on') === 0 || name === 'style' || name === 'class' || name === 'id') {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+                if (allowedTags[node.tagName].indexOf(name) === -1) {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+                if (name === 'href') {
+                    var href = cleanUrl(attr.value, 'link');
+                    href ? node.setAttribute('href', href) : node.removeAttribute('href');
+                }
+                if (name === 'src') {
+                    var src = cleanUrl(attr.value, 'image');
+                    src ? node.setAttribute('src', src) : node.removeAttribute('src');
+                }
+            });
+
+            if (node.tagName === 'A') {
+                node.setAttribute('rel', 'noopener noreferrer');
+                if (node.getAttribute('target') !== '_blank') node.removeAttribute('target');
+            }
+            if (node.tagName === 'IMG' && !node.getAttribute('loading')) {
+                node.setAttribute('loading', 'lazy');
+            }
+        });
+
+        return template.innerHTML;
     }
 
     /* ===================================================================
